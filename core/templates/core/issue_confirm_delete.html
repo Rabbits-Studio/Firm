@@ -1,0 +1,8 @@
+<!-- core/templates/core/issue_confirm_delete.html -->
+<h2>Delete Issue</h2>
+<p>Are you sure you want to delete: <strong>{{ issue.title }}</strong>?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+    <a href="{% url 'issue_list' %}">Cancel</a>
+</form>

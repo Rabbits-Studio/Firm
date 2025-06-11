@@ -1,0 +1,14 @@
+<!-- core/templates/core/issue_list.html -->
+<h2>All Issues</h2>
+<a href="{% url 'issue_create' %}">Add New Issue</a>
+<ul>
+    {% for issue in issues %}
+        <li>
+            <a href="{% url 'issue_detail' issue.pk %}">{{ issue.title }}</a>
+            - <a href="{% url 'issue_update' issue.pk %}">Edit</a>
+            - <a href="{% url 'issue_delete' issue.pk %}">Delete</a>
+        </li>
+    {% empty %}
+        <li>No issues found.</li>
+    {% endfor %}
+</ul>

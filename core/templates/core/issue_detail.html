@@ -1,0 +1,8 @@
+<!-- core/templates/core/issue_detail.html -->
+<h2>{{ issue.title }}</h2>
+<p><strong>Petitioner:</strong> {{ issue.petitioner }}</p>
+<p><strong>Defendant:</strong> {{ issue.defendant }}</p>
+<!-- Add other fields here -->
+<a href="{% url 'issue_update' issue.pk %}">Edit</a>
+<a href="{% url 'issue_delete' issue.pk %}">Delete</a>
+<a href="{% url 'issue_list' %}">Back to list</a>

@@ -1,0 +1,8 @@
+<!-- core/templates/core/issue_form.html -->
+<h2>{{ form.instance.pk|yesno:"Edit Issue,Add New Issue" }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+<a href="{% url 'issue_list' %}">Back to list</a>
