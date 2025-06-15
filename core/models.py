@@ -1,5 +1,7 @@
 from decimal import Decimal
 from django.db import models
+from nepali_datetime import date as bs_date
+
 
 class Bank(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -18,8 +20,19 @@ class Issue(models.Model):
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
     prepaid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
-    issue_date = models.DateField()
-    final_date = models.DateField()
+    issue_date_bs = models.CharField(
+        max_length=20,
+        verbose_name="मुद्दा दर्ता मिति (वि.सं)",
+        help_text="वि.सं मा मिति प्रविष्ट गर्नुहोस् (जस्तै: 2081-01-01)"
+    )
+    final_date_bs = models.CharField(
+        max_length=20,
+        verbose_name="अन्तिम मिति (वि.सं)",
+        help_text="वि.सं मा मिति प्रविष्ट गर्नुहोस् (जस्तै: 2081-12-30)"
+    )
+
+    issue_date = models.DateField(editable=False)
+    final_date = models.DateField(editable=False)
 
     total_days = models.IntegerField(blank=True, editable=False)
     interest_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False)
@@ -34,7 +47,7 @@ class Issue(models.Model):
         decimal_places=3,
         choices=TAX_RATE_CHOICES,
         default=Decimal('0.01'),
-        verbose_name="Tax Rate"
+        verbose_name="कर"
     )
 
     tax_revenue_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False)
@@ -55,16 +68,24 @@ class Issue(models.Model):
         if not self.id:
             raise ValueError("मुद्दा नम्बर (ID) manually specify गर्नुहोस्।")
 
-        self.total_days = (self.final_date - self.issue_date).days
+        try:
+            issue_bs = bs_date(*map(int, self.issue_date_bs.split('-')))
+            final_bs = bs_date(*map(int, self.final_date_bs.split('-')))
+
+            self.issue_date = issue_bs.to_datetime_date()
+            self.final_date = final_bs.to_datetime_date()
+
+            self.total_days = (final_bs - issue_bs).days
+
+        except Exception as e:
+            raise ValueError(f"Invalid BS date format or out-of-range: {e}")
 
         self.interest_amount = (
             (self.principal_amount * self.interest_rate * self.total_days) / Decimal('36500')
         ).quantize(Decimal('0.01'))
 
         self.total_amount = (self.claimed_amount + self.interest_amount).quantize(Decimal('0.01'))
-
         self.tax_revenue_amount = (self.total_amount * self.tax_rate).quantize(Decimal('0.01'))
-
         self.payable_amount = (self.tax_revenue_amount - self.prepaid_amount).quantize(Decimal('0.01'))
 
         super().save(*args, **kwargs)
