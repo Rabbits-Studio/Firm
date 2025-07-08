@@ -16,7 +16,7 @@ staticfiles
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
-
+core/OLD_admin.py
 # AWS User-specific
 .idea/**/aws.xml
 firm.bat
