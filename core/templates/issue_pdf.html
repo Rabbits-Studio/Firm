@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        
+        body {
+            font-family: "Kalimati", DejaVu Sans, sans-serif;
+            font-size: 14px;
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .date-right {
+            text-align: right;
+            margin-bottom: 10px;
+            margin-right: 100px;
+        }
+
+        table {
+            width: 100%;
+            border-spacing: 8px;
+        }
+
+        td {
+            vertical-align: middle;
+        }
+
+        .label {
+            width: 80px;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">ऋण असुली न्यायाधिकरण</div>
+    <div class="title">राजस्व रकम दाखिला</div>
+    <div class="date-right">मिति: {{ today }}</div>
+
+    <table>
+        <tr>
+            <td class="label">वादी :</td>
+            <td colspan="3">{{ issue.petitioner }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">प्रतिवादी :</td>
+            <td colspan="3">{{ issue.defendant }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">सावा रकम :</td>
+            <td>रू. {{ issue.principal_amount }}</div></td>
+            <td class="label">दाबी रकम :</td>
+            <td>रू. {{ issue.claimed_amount }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">मुद्दा दर्ता मिति :</td>
+            <td>{{ issue.issue_date_bs }}</div></td>
+            <td class="label">अन्तिम मिति :</td>
+            <td>{{ issue.final_date_bs }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">कुल दिन :</td>
+            <td>{{ issue.total_days }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">ब्याज दर :</td>
+            <td>{{ issue.interest_rate }}%</div></td>
+            <td class="label">ब्याज रकम :</td>
+            <td>रू. {{ issue.interest_amount }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">कुल रकम :</td>
+            <td>रू. {{ issue.total_amount }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">कर :</td>
+            <td>{{ issue.tax_rate|floatformat:1 }}%</div></td>
+            <td class="label">राजस्व रकम :</td>
+            <td>रू. {{ issue.tax_revenue_amount }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">अगावै तिरेको रकम :</td>
+            <td>रू. {{ issue.prepaid_amount }}</div></td>
+        </tr>
+        <tr>
+            <td class="label">भुक्तानी गर्नुपर्ने रकम :</td>
+            <td colspan="3">रू. {{ issue.payable_amount }}</div></td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,4 @@
+@echo off
+cd D:\Firm
+call D:\Firm\venv\Scripts\activate.bat
+python manage.py runserver 0.0.0.0:8000

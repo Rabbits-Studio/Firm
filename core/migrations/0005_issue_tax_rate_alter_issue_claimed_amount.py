@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='issue',
             name='claimed_amount',
-            field=models.DecimalField(decimal_places=2, max_digits=10),
+            field=models.DecimalField(decimal_places=3, max_digits=10),
         ),
     ]

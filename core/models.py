@@ -1,88 +1,58 @@
-from decimal import Decimal
 from django.db import models
+from decimal import Decimal
 from nepali_datetime import date as bs_date
-
 
 class Bank(models.Model):
     name = models.CharField(max_length=255, unique=True)
-
     def __str__(self):
         return self.name
-
+    
+    class Meta:
+        verbose_name = "बैंक"
+        verbose_name_plural = "बैंकहरु"
 
 class Issue(models.Model):
     id = models.CharField(max_length=15, primary_key=True, verbose_name='मुद्दा नम्बर')
-    title = models.CharField(max_length=100)
-    petitioner = models.ForeignKey(Bank, on_delete=models.SET_NULL, null=True, blank=True)
-    defendant = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, null=True, blank=True, verbose_name='शीर्षक')
+    petitioner = models.ForeignKey(Bank, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='वादी')
+    defendant = models.CharField(max_length=100, null=True, blank=True, verbose_name='प्रतिवादी')
 
-    principal_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    principal_amount = models.DecimalField(max_digits=20, decimal_places=2)
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
-    prepaid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    prepaid_amount = models.DecimalField(max_digits=20, decimal_places=2, default=Decimal('0.00'))
 
-    issue_date_bs = models.CharField(
-        max_length=20,
-        verbose_name="मुद्दा दर्ता मिति (वि.सं)",
-        help_text="वि.सं मा मिति प्रविष्ट गर्नुहोस् (जस्तै: 2081-01-01)"
-    )
-    final_date_bs = models.CharField(
-        max_length=20,
-        verbose_name="अन्तिम मिति (वि.सं)",
-        help_text="वि.सं मा मिति प्रविष्ट गर्नुहोस् (जस्तै: 2081-12-30)"
-    )
+    issue_date_bs = models.CharField(max_length=20, verbose_name="साँवा गणना शुरु (वि.सं)")
+    final_date_bs = models.CharField(max_length=20, verbose_name="अन्तिम मिति (वि.सं)")
 
-    issue_date = models.DateField(editable=False)
-    final_date = models.DateField(editable=False)
+    total_days = models.IntegerField(blank=True, editable=False, verbose_name="कुल दिन")
+    interest_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, editable=False, verbose_name="ब्याज रकम")
+    claimed_amount = models.DecimalField(max_digits=20, decimal_places=2)
+    TAX_RATE_CHOICES = [(Decimal('0.010'), '1%'), (Decimal('0.005'), '0.5%')]
+    tax_rate = models.DecimalField(max_digits=6, decimal_places=3, choices=TAX_RATE_CHOICES, default=Decimal('0.010'), verbose_name="drt-शुल्क")
+    tax_revenue_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, editable=False, verbose_name="राजस्व रकम")
+    total_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, editable=False,  verbose_name='कुल रकम')
+    payable_amount = models.DecimalField(max_digits=20, decimal_places=2, blank=True, editable=False, verbose_name='भुक्तानी गर्नुपर्ने रकम')
 
-    total_days = models.IntegerField(blank=True, editable=False)
-    interest_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False)
-    claimed_amount = models.DecimalField(max_digits=10, decimal_places=2)
-
-    TAX_RATE_CHOICES = [
-        (Decimal('0.01'), '1%'),
-        (Decimal('0.005'), '0.5%'),
-    ]
-    tax_rate = models.DecimalField(
-        max_digits=4,
-        decimal_places=3,
-        choices=TAX_RATE_CHOICES,
-        default=Decimal('0.01'),
-        verbose_name="कर"
-    )
-
-    tax_revenue_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False)
-    payable_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False)
-
-    STATUS_CHOICES = [
-        ('open', 'Open'),
-        ('closed', 'Closed'),
-        ('pending', 'Pending'),
-    ]
+    STATUS_CHOICES = [('open', 'Open'), ('closed', 'Closed'), ('pending', 'Pending')]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Extra fields for saving AD dates converted from BS strings (not editable)
+    issue_date = models.DateField(editable=False, null=True, blank=True)
+    final_date = models.DateField(editable=False, null=True, blank=True)
+
     def save(self, *args, **kwargs):
-        if not self.id:
-            raise ValueError("मुद्दा नम्बर (ID) manually specify गर्नुहोस्।")
+        # Convert BS dates to AD datetime.date objects for calculations
+        bs1 = bs_date(*map(int, self.issue_date_bs.split('-')))
+        bs2 = bs_date(*map(int, self.final_date_bs.split('-')))
+        self.issue_date = bs1.to_datetime_date()
+        self.final_date = bs2.to_datetime_date()
 
-        try:
-            issue_bs = bs_date(*map(int, self.issue_date_bs.split('-')))
-            final_bs = bs_date(*map(int, self.final_date_bs.split('-')))
+        self.total_days = (bs2 - bs1).days
 
-            self.issue_date = issue_bs.to_datetime_date()
-            self.final_date = final_bs.to_datetime_date()
-
-            self.total_days = (final_bs - issue_bs).days
-
-        except Exception as e:
-            raise ValueError(f"Invalid BS date format or out-of-range: {e}")
-
-        self.interest_amount = (
-            (self.principal_amount * self.interest_rate * self.total_days) / Decimal('36500')
-        ).quantize(Decimal('0.01'))
+        self.interest_amount = ((self.principal_amount * self.interest_rate * self.total_days) / Decimal('36500')).quantize(Decimal('0.01'))
 
         self.total_amount = (self.claimed_amount + self.interest_amount).quantize(Decimal('0.01'))
         self.tax_revenue_amount = (self.total_amount * self.tax_rate).quantize(Decimal('0.01'))
@@ -91,4 +61,8 @@ class Issue(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.title
+        return self.title or self.id
+
+    class Meta:
+        verbose_name = "थप गणना"
+        verbose_name_plural = "गणना गर्नु होस"

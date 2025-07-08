@@ -1,15 +1,44 @@
 import nepali_datetime
 from django import forms
-from .models import Issue
 from decimal import Decimal
+from .models import Issue
+from .utils.nepali_numerals import eng_to_nep, nep_to_eng
+from .widgets import NepaliUnicodeTextInput
+
+
+class NepaliUnicodeDecimalField(forms.CharField):
+    def to_python(self, value):
+        if value:
+            try:
+                english = nep_to_eng(value.strip())
+                return Decimal(english)
+            except Exception:
+                raise forms.ValidationError("कृपया नेपाली अंकमा मात्र संख्या लेख्नुहोस्।")
+        return Decimal('0')
+
 
 class IssueForm(forms.ModelForm):
-    issue_date_bs = forms.CharField(required=True, label='Issue Date (BS)')
-    final_date_bs = forms.CharField(required=True, label='Final Date (BS)')
+    issue_date_bs = forms.CharField(
+        required=True, label='मुद्दा दर्ता मिति (वि.सं)',
+        widget=NepaliUnicodeTextInput()
+    )
+    final_date_bs = forms.CharField(
+        required=True, label='अन्तिम मिति (वि.सं)',
+        widget=NepaliUnicodeTextInput()
+    )
+
+    principal_amount = NepaliUnicodeDecimalField(
+        required=True, label='सावा रकम', widget=NepaliUnicodeTextInput()
+    )
+    interest_rate = NepaliUnicodeDecimalField(
+        required=True, label='ब्याज दर (%)', widget=NepaliUnicodeTextInput()
+    )
+    prepaid_amount = NepaliUnicodeDecimalField(
+        required=False, label='अगावै तिरेको रकम', widget=NepaliUnicodeTextInput()
+    )
 
     class Meta:
         model = Issue
-        # Exclude AD date fields since they are handled in clean()
         exclude = [
             'issue_date', 'final_date', 'total_days', 'interest_amount',
             'claimed_amount', 'total_amount', 'payable_amount',
@@ -26,10 +55,10 @@ class IssueForm(forms.ModelForm):
             issue_date = nepali_datetime.date.from_string(issue_date_bs).to_datetime_date()
             final_date = nepali_datetime.date.from_string(final_date_bs).to_datetime_date()
         except Exception as e:
-            raise forms.ValidationError(f"Invalid BS date format: {e}")
+            raise forms.ValidationError(f"मिति त्रुटि : {e}")
 
         if issue_date > final_date:
-            raise forms.ValidationError("Issue date cannot be after final date.")
+            raise forms.ValidationError("मुद्दा दर्ता मिति अन्तिम मितिभन्दा अघि हुनुपर्छ।")
 
         cleaned_data['issue_date'] = issue_date
         cleaned_data['final_date'] = final_date
